@@ -326,6 +326,30 @@ textarea{width:100%;min-height:110px;border-radius:var(--r-md);border:1.5px soli
 .offline-pill{position:fixed;top:calc(env(safe-area-inset-top) + 8px);left:50%;transform:translateX(-50%);z-index:1001;
   background:var(--ink);color:var(--bg);font:600 13px/1 var(--sans);padding:7px 12px;border-radius:99px}
 
+
+/* ---------- entradas guardadas ---------- */
+.attach{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.attach .muted{font-size:13px}
+.attach .btn.ghost{border-color:transparent;padding:9px 8px}
+.btn.danger{color:#C0392B}
+.tktip{font-size:13.5px;color:var(--ink-2);line-height:1.4;margin-top:2px}
+.pass-foot{padding:0 18px 16px}
+.pass-foot .btn{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff}
+.pass-foot .btn.primary{background:var(--amber);border-color:var(--amber);color:#2A1B00}
+.pass-foot .muted{color:rgba(255,255,255,.7)}
+.pass-foot .attach{margin-top:0}
+.viewer{position:fixed;inset:0;z-index:3000;background:#0B0F1A;display:flex;flex-direction:column}
+.vhead{display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;color:#fff;border-bottom:1px solid rgba(255,255,255,.12)}
+.vtitle{flex:1;font:600 22px/1.1 var(--cond);margin:0}
+.vclose{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center}
+.vhint{margin:0;padding:8px 16px;font-size:13px;color:#C9D1DE;background:rgba(255,255,255,.06)}
+.vbody{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 12px calc(24px + env(safe-area-inset-bottom));display:grid;gap:14px;align-content:start;justify-items:center}
+.vfig{margin:0;width:100%;max-width:900px}
+.vpage{display:block;width:100%;height:auto;background:#fff;border-radius:6px}
+.vfig figcaption{text-align:center;color:#8C96A8;font-size:12px;margin-top:6px}
+.vload{color:#C9D1DE;text-align:center;margin-top:40px}
+body.noscroll{overflow:hidden}
+
 @media (prefers-reduced-motion: reduce){ *{transition:none!important;scroll-behavior:auto!important} }
 </style>
 </head>
@@ -340,6 +364,11 @@ textarea{width:100%;min-height:110px;border-radius:var(--r-md);border:1.5px soli
     <button data-tab="guia"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M8 7h7M8 11h5"/></svg>Guía</button>
     <button data-tab="viaje"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V4h6v3M4 12h16"/></svg>Viaje</button>
   </nav>
+</div>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Entradas">
+  <div class="vhead"><h2 class="vtitle">Entradas</h2><button class="vclose" aria-label="Cerrar"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <p class="vhint">Sube el brillo de la pantalla para que lean bien el QR.</p>
+  <div class="vbody"></div>
 </div>
 <script src="vendor/leaflet.js"></script>
 <script src="data.js"></script>

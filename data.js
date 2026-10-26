@@ -65,9 +65,9 @@ const DAYS = [
       { t:"17:30", kind:"taxi", title:"Al aeropuerto de Sevilla", note:"Dos horas antes del vuelo.",
         more:["Ryanair cierra el embarque 30 minutos antes de la salida.", "Tarjetas de embarque en la app de Ryanair, una por persona.", "Gratis solo la mochila pequeña que va bajo el asiento; la maleta de cabina, si la habéis pagado."],
         maps:"Aeropuerto de Sevilla", mode:"driving" },
-      { t:"19:30", kind:"plane", title:"Vuelo FR1246 a París Beauvais", note:"Sevilla 19:30 → Beauvais 22:00.", fixed:true },
+      { t:"19:30", kind:"plane", booking:"f-ida", title:"Vuelo FR1246 a París Beauvais", note:"Sevilla 19:30 → Beauvais 22:00.", fixed:true },
       { t:"22:00", kind:"plane", title:"Llegada a Beauvais", note:"Salid directos a la parada del Aérobus, delante de la terminal. Los autobuses salen coordinados con los vuelos.", fixed:true, maps:"Aéroport de Paris-Beauvais", mode:"walking" },
-      { t:"22:30", kind:"bus", title:"Aérobus A01 a Porte Maillot", note:"Entre 1h15 y 1h30 de trayecto. Unos 17 € por persona.", todo:"Comprar billetes",
+      { t:"22:30", kind:"bus", booking:"r-bus", title:"Aérobus A01 a Porte Maillot", note:"Entre 1h15 y 1h30 de trayecto. Unos 17 € por persona.", todo:"Comprar billetes",
         more:["En 2026 el billete se reserva online antes de viajar.", "Las maletas van en la bodega: llevad a mano solo lo necesario.", "Termina en el 22 del boulevard Pershing, en Porte Maillot."],
         maps:"Paris Porte Maillot, 22 boulevard Pershing, 75017 Paris", mode:"driving" },
       { t:"00:00", next:true, kind:"taxi", title:"De Porte Maillot al hotel", note:"Taxi o VTC, unos 10 minutos.",
@@ -96,9 +96,11 @@ const DAYS = [
         more:["Queserías, panaderías y fruterías: buen sitio para algo sencillo y francés."],
         maps:"Rue Cler, 75007 Paris", mode:"walking" },
       { t:"14:30", kind:"photo", title:"Campo de Marte", note:"Fotos de la Torre desde el césped antes de entrar.", maps:"Champ de Mars, Paris", mode:"walking" },
-      { t:"15:00", kind:"shield", title:"Control de seguridad", note:"Media hora antes de la reserva, con el QR en captura de pantalla.", maps:"Tour Eiffel, Paris", ll:[48.8574, 2.2960], mode:"walking" },
-      { t:"15:30", kind:"eiffel", title:"Torre Eiffel por escaleras", note:"Hasta el 2º piso. Entre 1h30 y 2h en total.", fixed:true,
-        more:["674 escalones hasta el 2º piso, con parada en el 1º, que tiene suelo de cristal.", "Desde arriba se ven el Sacré-Cœur, Notre-Dame y los Inválidos.", "El billete de escaleras llega solo al 2º piso."],
+      { t:"15:10", kind:"shield", booking:"r-eiffel", title:"Control de seguridad", note:"Entre 15 y 20 minutos antes de la hora, por el acceso para visitantes con entrada, en los jardines.",
+        more:["Las entradas son nominativas: llevad el DNI.", "No se admiten maletas ni bultos grandes y no hay consigna.", "El QR vale desde el móvil o impreso en un A4 completo."],
+        maps:"Tour Eiffel, Paris", ll:[48.8574, 2.2960], mode:"walking" },
+      { t:"15:30", kind:"eiffel", booking:"r-eiffel", title:"Torre Eiffel por escaleras", note:"Hasta el 2º piso. Entre 1h30 y 2h en total.", fixed:true,
+        more:["674 escalones hasta el 2º piso, con parada en el 1º, que tiene suelo de cristal.", "Desde arriba se ven el Sacré-Cœur, Notre-Dame y los Inválidos.", "La entrada llega solo al 2º piso y allí no se puede ampliar a la cima.", "Llevad la entrada encima toda la visita. Una vez bajáis, no se vuelve a subir."],
         maps:"Tour Eiffel, Paris", mode:"walking" },
       { t:"18:00", kind:"boat", title:"Crucero por el Sena", note:"Opcional. Sale del pie de la Torre y dura alrededor de una hora.",
         more:["Bateaux Parisiens: se compra online o en la taquilla del muelle.", "Ida y vuelta hasta Notre-Dame, con los monumentos ya iluminados."],
@@ -116,11 +118,11 @@ const DAYS = [
     stops: [
       { t:"08:45", kind:"coffee", title:"Desayuno" },
       { t:"09:20", kind:"metro", title:"Metro hasta el Louvre", note:"L1 de Argentine a Palais Royal–Musée du Louvre, directo, unos 15 minutos.", maps:"Palais Royal - Musee du Louvre, Paris", ll:[48.8625, 2.3364], mode:"transit" },
-      { t:"09:45", kind:"ticket", title:"Entrada por la Pirámide", note:"Fila de visitantes con billete. QR en captura: dentro la cobertura falla.",
-        more:["La entrada del Carrousel, bajo tierra, también admite entradas con hora y suele tener menos cola.", "Llevad el DNI: lo pueden pedir junto a la entrada."],
+      { t:"09:45", kind:"ticket", booking:"r-louvre", title:"Entrada por la Pirámide", note:"Fila de visitantes con entrada. Tened las entradas cargadas en la app: dentro la cobertura falla.",
+        more:["Con entrada se puede pasar por la Pirámide o por el Carrousel, bajo tierra, que suele tener menos cola.", "Llevad el DNI. Dos de las entradas son gratuitas por edad (18 a 25 años) y lo pedirán para comprobarlo."],
         maps:"Pyramide du Louvre, Paris", mode:"walking" },
-      { t:"10:00", kind:"museum", title:"Museo del Louvre", note:"Unas 3 horas para lo imprescindible.", fixed:true,
-        more:["La Gioconda: ala Denon, 1ª planta, sala de los Estados. Id primero, antes de que se llene.", "Victoria de Samotracia: en lo alto de la escalera Daru, ala Denon.", "Venus de Milo: ala Sully, planta baja.", "La balsa de la Medusa y La coronación de Napoleón: ala Denon, pintura francesa de gran formato.", "Guardarropa gratuito bajo la Pirámide."],
+      { t:"10:00", kind:"museum", booking:"r-louvre", title:"Museo del Louvre", note:"Unas 3 horas para lo imprescindible, con audioguía.", fixed:true,
+        more:["Audioguías: se recogen en la planta -1, bajo la Pirámide, junto a las entradas de las alas Denon y Sully. Se devuelven en el mismo mostrador o, si salís por la Porte des Lions, antes de la salida.", "La Gioconda: ala Denon, 1ª planta, sala de los Estados. Id primero, antes de que se llene.", "Victoria de Samotracia: en lo alto de la escalera Daru, ala Denon.", "Venus de Milo: ala Sully, planta baja.", "La balsa de la Medusa y La coronación de Napoleón: ala Denon, pintura francesa de gran formato.", "Guardarropa gratuito bajo la Pirámide."],
         maps:"Musée du Louvre, Paris", mode:"walking" },
       { t:"13:15", kind:"food", title:"Comida junto al Palais-Royal", note:"Y paseo por sus jardines y las columnas de Buren.",
         more:["Angelina, en el 226 de la rue de Rivoli, es famosa por su chocolate caliente. Suele haber cola."],
@@ -128,7 +130,7 @@ const DAYS = [
       { t:"14:30", kind:"walk", title:"Pont des Arts y Pont Neuf", note:"Andando junto al Sena hasta la Île de la Cité.",
         more:["El Pont Neuf, pese a su nombre, es el puente más antiguo de París.", "En la punta de la isla, la plaza del Vert-Galant baja hasta el agua."],
         maps:"Pont Neuf, Paris", mode:"walking" },
-      { t:"15:15", kind:"church", title:"Catedral de Notre-Dame", note:"Entrada gratuita con franja horaria.", todo:"Reservar franja",
+      { t:"15:15", kind:"church", booking:"r-nd", title:"Catedral de Notre-Dame", note:"Entrada gratuita con franja horaria.", todo:"Reservar franja",
         more:["La franja se reserva en la web oficial 2 o 3 días antes: el jueves o el viernes.", "Restaurada tras el incendio de 2019 y abierta de nuevo desde diciembre de 2024.", "Por Todos los Santos puede haber celebraciones que limiten la visita."],
         maps:"Cathédrale Notre-Dame de Paris", mode:"walking" },
       { t:"16:30", kind:"walk", title:"Barrio Latino", note:"Shakespeare and Company, Saint-Michel y el Panteón por fuera.",
@@ -161,20 +163,20 @@ const DAYS = [
         more:["La tarifa fija desde la orilla derecha no cambia aunque haya tráfico.", "Alternativa en metro: L1 hasta Châtelet y L14 hasta Aéroport d'Orly, con billete especial de aeropuerto."],
         maps:"Aéroport de Paris-Orly", mode:"driving" },
       { t:"15:00", kind:"plane", title:"Llegada a Orly", note:"Dos horas antes del vuelo." },
-      { t:"17:05", kind:"plane", title:"Vuelo VY8074 a Sevilla", note:"Orly 17:05 → Sevilla 19:25.", fixed:true },
+      { t:"17:05", kind:"plane", booking:"f-vuelta", title:"Vuelo VY8074 a Sevilla", note:"Orly 17:05 → Sevilla 19:25.", fixed:true },
       { t:"19:25", kind:"bed", title:"En casa", fixed:true }
     ]
   }
 ];
 
 const FLIGHTS = [
-  { date:"Vie 30 oct", airline:"Ryanair", code:"FR1246", from:"SVQ", fromName:"Sevilla", dep:"19:30", to:"BVA", toName:"París Beauvais", arr:"22:00" },
-  { date:"Lun 2 nov", airline:"Vueling", code:"VY8074", from:"ORY", fromName:"París Orly", dep:"17:05", to:"SVQ", toName:"Sevilla", arr:"19:25" }
+  { id:"f-ida", date:"Vie 30 oct", airline:"Ryanair", code:"FR1246", from:"SVQ", fromName:"Sevilla", dep:"19:30", to:"BVA", toName:"París Beauvais", arr:"22:00" },
+  { id:"f-vuelta", date:"Lun 2 nov", airline:"Vueling", code:"VY8074", from:"ORY", fromName:"París Orly", dep:"17:05", to:"SVQ", toName:"Sevilla", arr:"19:25" }
 ];
 
 const BOOKINGS = [
-  { id:"r-eiffel", what:"Torre Eiffel", detail:"2º piso por escaleras", when:"Sáb 31 · 15:30", kind:"eiffel" },
-  { id:"r-louvre", what:"Museo del Louvre", detail:"Entrada con hora", when:"Dom 1 · 10:00", kind:"museum" },
+  { id:"r-eiffel", what:"Torre Eiffel", detail:"4 entradas · 2º piso por escaleras", when:"Sáb 31 · 15:30", kind:"eiffel", tip:"Llegad 15–20 min antes, con DNI y sin maletas." },
+  { id:"r-louvre", what:"Museo del Louvre", detail:"4 entradas y 4 audioguías", when:"Dom 1 · 10:00", kind:"museum", tip:"Con DNI. Audioguías en la planta -1, bajo la Pirámide." },
   { id:"r-bus", what:"Aérobus Beauvais", detail:"A Porte Maillot", when:"Vie 30 · tras el vuelo", kind:"bus", pending:true },
   { id:"r-nd", what:"Notre-Dame", detail:"Franja gratuita", when:"Dom 1 · 15:15", kind:"church", pending:true }
 ];
@@ -183,7 +185,7 @@ const BEFORE = [
   { id:"b-aerobus", text:"Comprar el Aérobus Beauvais → Porte Maillot", sub:"Cuatro billetes. Sin reserva os podéis quedar sin plaza esa noche." },
   { id:"b-hotel", text:"Avisar al hotel de la llegada pasada la medianoche" },
   { id:"b-nd", text:"Reservar franja en Notre-Dame para el domingo", sub:"Se abre 2 o 3 días antes: jueves 29 o viernes 30." },
-  { id:"b-qr", text:"Capturas de los QR", sub:"Torre Eiffel, Louvre y tarjetas de embarque." },
+  { id:"b-qr", text:"Cargar las entradas en la app", sub:"En Viaje → Reservas: Torre Eiffel, Louvre y tarjetas de embarque. Funcionan sin conexión." },
   { id:"b-metro", text:"Billetes de metro en el móvil", sub:"App Bonjour RATP, o en las máquinas de cualquier estación." },
   { id:"b-app", text:"Instalar esta app en los cuatro móviles", sub:"Y abrir el mapa de cada día una vez con conexión." }
 ];

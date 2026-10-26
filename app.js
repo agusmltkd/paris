@@ -130,6 +130,85 @@ function wxChip(id, full){
   return `<div class="wx${full ? " full" : ""}">${wxIcon(k)}<b>${w.max}°</b><span class="lo">${w.min}°</span>${full ? `<span class="wxl">${label}</span>` : ""}<span class="rain">${icon("drop")}${w.rain ?? 0}%</span>${full && w.sunset ? `<span class="rain">${icon("sunset")}${w.sunset}</span>` : ""}</div>`;
 }
 
+/* ===================== entradas guardadas en el móvil ===================== */
+// Los PDF o fotos de las entradas se guardan en este teléfono (IndexedDB), nunca en la web.
+const TicketDB = (() => {
+  let dbp;
+  const db = () => dbp || (dbp = new Promise((res, rej) => {
+    const r = indexedDB.open("paris-entradas", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("files");
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  }));
+  const run = (mode, fn) => db().then(d => new Promise((res, rej) => {
+    const t = d.transaction("files", mode), q = fn(t.objectStore("files"));
+    t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error);
+  }));
+  return {
+    get: k => run("readonly", s => s.get(k)),
+    put: (k, v) => run("readwrite", s => s.put(v, k)),
+    del: k => run("readwrite", s => s.delete(k)),
+    keys: () => run("readonly", s => s.getAllKeys())
+  };
+})();
+let saved = new Set();
+const refreshSaved = () => TicketDB.keys().then(k => { saved = new Set(k); }).catch(() => {});
+const BOOKING_NAME = Object.fromEntries(BOOKINGS.map(b => [b.id, b.what]).concat(FLIGHTS.map(f => [f.id, `Vuelo ${f.code}`])));
+
+const viewBtn = (id, cls = "") => saved.has(id) ? `<button class="btn ticketbtn ${cls}" data-viewtk="${id}">${icon("ticket")}Ver entradas</button>` : "";
+function attachControls(id){
+  return saved.has(id)
+    ? `<div class="attach">${viewBtn(id, "primary")}<button class="btn ghost" data-pick="${id}">Cambiar</button><button class="btn ghost danger" data-unpick="${id}">Quitar</button></div>`
+    : `<div class="attach"><button class="btn" data-pick="${id}">${icon("ticket")}Añadir entradas</button><span class="muted">PDF o foto</span></div>`;
+}
+function pickFile(id){
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "application/pdf,image/*";
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    try {
+      await TicketDB.put(id, { name:f.name, type:f.type || (f.name.endsWith(".pdf") ? "application/pdf" : "image/jpeg"), data:await f.arrayBuffer(), added:Date.now() });
+      navigator.storage?.persist?.();
+      await refreshSaved(); render(true);
+    } catch { alert("No se ha podido guardar el archivo en este móvil."); }
+  };
+  inp.click();
+}
+
+let pdfjsReady = null;
+const loadPdfjs = () => pdfjsReady || (pdfjsReady = new Promise((res, rej) => {
+  const s = document.createElement("script"); s.src = "vendor/pdf.min.js";
+  s.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdf.worker.min.js"; res(pdfjsLib); };
+  s.onerror = rej; document.head.appendChild(s);
+}));
+async function openTicket(id){
+  const rec = await TicketDB.get(id); if (!rec) return;
+  const v = $("#viewer"), body = $("#viewer .vbody");
+  $("#viewer .vtitle").textContent = BOOKING_NAME[id] || "Entradas";
+  body.innerHTML = `<p class="vload">Abriendo…</p>`;
+  v.hidden = false; document.body.classList.add("noscroll");
+  if (!rec.type.includes("pdf")){
+    const url = URL.createObjectURL(new Blob([rec.data], { type:rec.type }));
+    body.innerHTML = `<img class="vpage" src="${url}" alt="Entrada">`;
+    return;
+  }
+  try {
+    const lib = await loadPdfjs();
+    const pdf = await lib.getDocument({ data:new Uint8Array(rec.data.slice(0)) }).promise;
+    body.innerHTML = "";
+    const w = Math.min(body.clientWidth - 24, 900), dpr = Math.min(devicePixelRatio || 1, 3);
+    for (let n = 1; n <= pdf.numPages; n++){
+      const page = await pdf.getPage(n), vp1 = page.getViewport({ scale:1 }), vp = page.getViewport({ scale:(w / vp1.width) * dpr });
+      const fig = document.createElement("figure"); fig.className = "vfig";
+      const c = document.createElement("canvas"); c.width = vp.width; c.height = vp.height; c.className = "vpage";
+      fig.appendChild(c);
+      const cap = document.createElement("figcaption"); cap.textContent = `Página ${n} de ${pdf.numPages}`; fig.appendChild(cap);
+      body.appendChild(fig);
+      await page.render({ canvasContext:c.getContext("2d"), viewport:vp }).promise;
+    }
+  } catch { body.innerHTML = `<p class="vload">No se ha podido abrir el PDF. Prueba a cargarlo otra vez.</p>`; }
+}
+function closeViewer(){ $("#viewer").hidden = true; $("#viewer .vbody").innerHTML = ""; document.body.classList.remove("noscroll"); }
+
 /* ===================== HOY ===================== */
 function viewHoy(){
   const c = tripClock();
@@ -172,7 +251,7 @@ function viewHoy(){
       ${n ? `<div class="now-next">
         <span class="lbl">Siguiente · ${inLabel(Math.max(0, mins(n) - c.min))}</span>
         <div class="now-row"><span class="kind">${icon(n.kind)}</span><div><b>${esc(n.title)}</b><small>a las ${n.t}${n.note ? ` · ${rich(n.note)}` : ""}</small></div></div>
-        ${n.maps ? goBtn(n.maps, n.mode, "Cómo llegar", "primary") : ""}
+        <div class="acts">${n.maps ? goBtn(n.maps, n.mode, "Cómo llegar", "primary") : ""}${n.booking ? viewBtn(n.booking) : ""}${s && s.booking && s.booking !== n.booking ? viewBtn(s.booking) : ""}</div>
       </div>` : `<div class="now-next"><span class="lbl">Siguiente</span><div class="now-row"><div><b>Fin del día</b><small>A descansar.</small></div></div></div>`}
     </section>
     ${rest.length ? `<section class="block"><h2>Lo que queda hoy</h2>
@@ -188,7 +267,7 @@ function viewPlan(){
   const nDone = d.stops.filter((s, i) => done[d.id + "#" + i]).length;
   const plaques = DAYS.map(x => `<button class="dayplaque${x.id === d.id ? " sel" : ""}${c.day && c.day.id === x.id ? " today" : ""}" data-sel="${x.id}">${plaque(x.short, x.n)}</button>`).join("");
   const stops = d.stops.map((s, i) => {
-    const key = d.id + "#" + i, isOpen = open.has(key), has = s.more || s.maps;
+    const key = d.id + "#" + i, isOpen = open.has(key), has = s.more || s.maps || (s.booking && saved.has(s.booking));
     const cls = ["stop", s.fixed && "fixed", done[key] && "done", i === cur && "current", isOpen && "open"].filter(Boolean).join(" ");
     return `<li class="${cls}" id="stop-${i}">
       <div class="t">${s.t}${s.next ? `<small>+1</small>` : ""}</div>
@@ -202,7 +281,7 @@ function viewPlan(){
         </header>
         ${has ? `<div class="more" ${isOpen ? "" : "hidden"}>
           ${s.more ? `<ul>${s.more.map(m => `<li>${rich(m)}</li>`).join("")}</ul>` : ""}
-          ${s.maps ? `<div class="acts">${goBtn(s.maps, s.mode)}${where(s) ? `<button class="btn ghost" data-showmap="${d.id}">${icon("map")}Ver en el mapa</button>` : ""}</div>` : ""}
+          ${s.maps || (s.booking && saved.has(s.booking)) ? `<div class="acts">${s.booking ? viewBtn(s.booking, "primary") : ""}${s.maps ? goBtn(s.maps, s.mode) : ""}${where(s) ? `<button class="btn ghost" data-showmap="${d.id}">${icon("map")}Ver en el mapa</button>` : ""}</div>` : ""}
         </div>
         <button class="morebtn" data-tog="${key}" aria-label="${isOpen ? "Ocultar detalles" : "Ver detalles"}">${icon("chev")}</button>` : ""}
       </article></li>`;
@@ -325,13 +404,16 @@ function viewViaje(){
         <div class="pass-plane">${icon("plane")}</div>
         <div class="r"><b class="iata">${f.to}</b><small>${esc(f.toName)}</small><span class="hr">${f.arr}</span></div>
       </div>
+      <div class="pass-foot">${attachControls(f.id).replace(/>Añadir entradas</, ">Añadir tarjetas de embarque<")}</div>
     </article>`).join("");
   const tickets = BOOKINGS.map(b => `
     <article class="ticket${b.pending ? " pending" : ""}">
       <div class="stub">${icon(b.kind)}</div>
       <div class="tk-body">
         <small>${esc(b.when)}</small><b>${esc(b.what)}</b><span>${esc(b.detail)}</span>
+        ${b.tip ? `<span class="tktip">${esc(b.tip)}</span>` : ""}
         ${b.pending ? `<span class="tag todo">Pendiente</span>` : ""}
+        ${attachControls(b.id)}
         <input class="code" data-code="${b.id}" value="${esc(store.get("paris.code." + b.id, ""))}" placeholder="Código de reserva" autocomplete="off" enterkeyhint="done">
       </div>
     </article>`).join("");
@@ -347,7 +429,7 @@ function viewViaje(){
       </div>
     </section>
     <section class="block"><h2>Reservas</h2><div class="tickets">${tickets}</div>
-      <p class="note">Apuntad aquí los códigos para tenerlos a mano. Se guardan solo en este móvil.</p></section>
+      <p class="note">Las entradas y los códigos se guardan solo en este móvil, no en la web, y se abren sin conexión. Cada uno puede cargar las suyas desde el PDF que os llegó por correo.</p></section>
     <section class="block"><h2>Antes de salir</h2>${checklist(BEFORE)}</section>
     <section class="block"><h2>En la maleta</h2>${checklist(PACK)}</section>`;
 }
@@ -389,7 +471,15 @@ function wire(){
   $$("[data-mapday]").forEach(b => b.onclick = () => { mapDay = b.dataset.mapday; store.set("paris.mapDay", mapDay); render(); });
   const note = $("#note"); if (note) note.oninput = e => store.set("paris.note." + sel, e.target.value);
   $$("[data-code]").forEach(i => i.oninput = () => store.set("paris.code." + i.dataset.code, i.value));
+  $$("[data-viewtk]").forEach(b => b.onclick = e => { e.stopPropagation(); openTicket(b.dataset.viewtk); });
+  $$("[data-pick]").forEach(b => b.onclick = () => pickFile(b.dataset.pick));
+  $$("[data-unpick]").forEach(b => b.onclick = async () => {
+    if (!confirm("¿Quitar las entradas guardadas en este móvil?")) return;
+    await TicketDB.del(b.dataset.unpick); await refreshSaved(); render(true);
+  });
 }
+$("#viewer .vclose").onclick = closeViewer;
+addEventListener("keydown", e => { if (e.key === "Escape" && !$("#viewer").hidden) closeViewer(); });
 
 $$(".tabbar button").forEach(b => b.onclick = () => {
   if (b.dataset.tab === "plan" && tab === "plan"){ const c = tripClock(); if (c.day){ sel = c.day.id; store.set("paris.sel", sel); } }
@@ -399,6 +489,7 @@ $$(".tabbar button").forEach(b => b.onclick = () => {
 // Durante el viaje se abre en "Hoy" con el día en curso seleccionado.
 (() => { const c = tripClock(); if (c.day){ sel = c.day.id; if (!store.get("paris.opened." + c.date, false)){ tab = "hoy"; store.set("paris.opened." + c.date, true); } } })();
 render();
+refreshSaved().then(() => { if (saved.size) render(true); });
 loadWeather();
 addEventListener("online", () => { render(true); loadWeather(); });
 addEventListener("offline", () => render(true));

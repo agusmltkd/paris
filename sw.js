@@ -1,5 +1,5 @@
 // Sube el número cuando cambies algo para que los móviles cojan la versión nueva.
-const CACHE = "paris-2026-v3";
+const CACHE = "paris-2026-v4";
 const TILES = "paris-tiles-v1";
 const MAX_TILES = 1500;
 const ASSETS = [
@@ -7,6 +7,7 @@ const ASSETS = [
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",
   "./vendor/leaflet.js", "./vendor/leaflet.css",
   "./data.js", "./scenes.js", "./app.js",
+  "./vendor/pdf.min.js", "./vendor/pdf.worker.min.js",
   "./vendor/fonts/barlow-latin-400-normal.woff2", "./vendor/fonts/barlow-latin-500-normal.woff2",
   "./vendor/fonts/barlow-latin-600-normal.woff2", "./vendor/fonts/barlow-latin-700-normal.woff2",
   "./vendor/fonts/barlow-condensed-latin-500-normal.woff2", "./vendor/fonts/barlow-condensed-latin-600-normal.woff2",
