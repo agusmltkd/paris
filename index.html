@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>París 2026</title>
+<meta name="description" content="Itinerario familiar a París, 30 oct – 2 nov 2026">
+<meta name="theme-color" content="#1B2A41" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1622" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="París">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<style>
+:root{
+  --paper:#F6F1E7; --card:#FFFDF8; --ink:#1B2A41; --ink-2:#4A5568; --line:#E4DCCB;
+  --accent:#B23A3A; --gold:#B8892B; --ok:#2F6B4F; --ok-bg:#E3EFE7; --warn-bg:#F8E9D2;
+  --chip:#EFE8D8; --shadow:0 1px 2px rgba(27,42,65,.06),0 4px 14px rgba(27,42,65,.06);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#0F1622; --card:#172233; --ink:#EDE6D6; --ink-2:#A9B3C2; --line:#26344A;
+    --accent:#E07070; --gold:#D8AE5A; --ok:#7FC79E; --ok-bg:#1C3328; --warn-bg:#3A2E1A;
+    --chip:#22304A; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-text-size-adjust:100%}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+a{color:inherit}
+button{font:inherit;color:inherit}
+
+/* ---------- cabecera ---------- */
+header{
+  background:var(--ink);color:var(--paper);
+  padding:calc(18px + env(safe-area-inset-top)) 16px 18px;
+}
+@media (prefers-color-scheme: dark){ header{background:#0A1019;color:var(--ink)} }
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.brand h1{font-family:var(--serif);font-weight:600;font-size:28px;letter-spacing:.2px;margin:0}
+.brand h1 em{font-style:italic;color:var(--gold)}
+.brand small{opacity:.75;font-size:13px;white-space:nowrap}
+.now{margin-top:14px;border-radius:14px;background:rgba(255,255,255,.08);padding:12px 14px}
+.now .lbl{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;opacity:.7}
+.now .big{font-family:var(--serif);font-size:20px;margin-top:2px;line-height:1.25}
+.now .sub{font-size:13px;opacity:.8;margin-top:4px}
+.now .row{display:flex;gap:12px;align-items:flex-start}
+.now .row > div{flex:1;min-width:0}
+.now .row > .sep{flex:0 0 1px;width:1px;align-self:stretch;background:rgba(255,255,255,.18)}
+.now .row .big{font-size:17px}
+
+/* ---------- pestañas de día ---------- */
+nav.days{
+  position:sticky;top:0;z-index:5;background:var(--paper);
+  display:flex;gap:6px;padding:10px 16px;overflow-x:auto;scrollbar-width:none;
+  border-bottom:1px solid var(--line);
+}
+nav.days::-webkit-scrollbar{display:none}
+.tab{
+  flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:12px;
+  padding:7px 12px;text-align:center;cursor:pointer;min-width:62px;
+}
+.tab b{display:block;font-family:var(--serif);font-size:19px;line-height:1.1}
+.tab span{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tab[aria-selected="true"] span{color:inherit;opacity:.8}
+@media (prefers-color-scheme: dark){ .tab[aria-selected="true"]{background:var(--gold);color:#111;border-color:var(--gold)} }
+.tab.today{position:relative}
+.tab.today::after{content:"";position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+main{padding:16px;max-width:680px;margin:0 auto}
+.dayhead h2{font-family:var(--serif);font-weight:600;font-size:24px;margin:4px 0 2px}
+.dayhead p{margin:0 0 14px;color:var(--ink-2);font-size:14px;line-height:1.45}
+.progress{height:4px;border-radius:4px;background:var(--line);overflow:hidden;margin:0 0 16px}
+.progress i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+
+/* ---------- paradas ---------- */
+ol.stops{list-style:none;margin:0;padding:0;position:relative}
+ol.stops::before{content:"";position:absolute;left:47px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.stop{display:grid;grid-template-columns:40px 16px 1fr;gap:0 10px;margin-bottom:12px;position:relative}
+.time{font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;padding-top:14px;text-align:right;color:var(--ink-2)}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--ink-2);margin-top:17px;position:relative;z-index:1;justify-self:center}
+.stop.fixed .dot{background:var(--accent);border-color:var(--accent)}
+.stop.done .dot{background:var(--ok);border-color:var(--ok)}
+.stop.current .dot{box-shadow:0 0 0 5px color-mix(in srgb,var(--gold) 35%,transparent);border-color:var(--gold)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 10px;box-shadow:var(--shadow);min-width:0}
+.stop.current .card{border-color:var(--gold)}
+.stop.done .card{opacity:.6}
+.card .top{display:flex;gap:10px;align-items:flex-start}
+.card h3{font-size:16px;margin:0;line-height:1.3;flex:1}
+.stop.done h3{text-decoration:line-through;text-decoration-thickness:1px}
+.chk{flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:1.5px solid var(--ink-2);background:transparent;display:grid;place-items:center;cursor:pointer;padding:0}
+.chk svg{width:16px;height:16px;opacity:0}
+.stop.done .chk{background:var(--ok);border-color:var(--ok);color:#fff}
+.stop.done .chk svg{opacity:1}
+.card p{margin:6px 0 0;font-size:14px;line-height:1.45;color:var(--ink-2)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{font-size:11px;font-weight:600;letter-spacing:.3px;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink-2)}
+.tag.fixed{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.tag.todo{background:var(--warn-bg);color:var(--gold)}
+.actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:13px;font-weight:600;
+  border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:transparent;cursor:pointer}
+.btn svg{width:15px;height:15px}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+@media (prefers-color-scheme: dark){ .btn.primary{background:var(--gold);color:#111;border-color:var(--gold)} }
+
+/* ---------- notas ---------- */
+.notes{margin-top:18px}
+.notes label{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+textarea{width:100%;min-height:90px;margin-top:6px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 12px;font:15px/1.45 var(--sans);resize:vertical}
+
+/* ---------- info ---------- */
+.section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.section h3{font-family:var(--serif);font-size:19px;margin:0 0 8px;font-weight:600}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;line-height:1.4}
+.kv dt{color:var(--ink-2)}
+.kv dd{margin:0;font-weight:500}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.4}
+.list li:first-child{border-top:0}
+.list li.done span{text-decoration:line-through;opacity:.6}
+.list li.done .chk{background:var(--ok);border-color:var(--ok);color:#fff}
+.list li.done .chk svg{opacity:1}
+.list small{display:block;color:var(--ink-2);margin-top:2px}
+
+/* ---------- barra inferior ---------- */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);display:flex;gap:8px;justify-content:center}
+.dock .btn{flex:1;max-width:220px;justify-content:center;padding:11px 10px;font-size:14px;background:var(--card)}
+.dock .btn.primary{background:var(--ink);color:var(--paper)}
+@media (prefers-color-scheme: dark){ .dock .btn.primary{background:var(--gold);color:#111} }
+/* ---------- lista / mapa ---------- */
+.seg{display:flex;border:1px solid var(--line);border-radius:11px;overflow:hidden;margin:0 0 14px;background:var(--card)}
+.seg button{flex:1;border:0;background:transparent;padding:8px 14px;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink-2);display:inline-flex;gap:6px;align-items:center;justify-content:center}
+.seg button svg{width:15px;height:15px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+@media (prefers-color-scheme: dark){ .seg button[aria-pressed="true"]{background:var(--gold);color:#111} }
+#map{height:56vh;min-height:320px;border-radius:14px;border:1px solid var(--line);overflow:hidden;z-index:0;background:var(--chip)}
+.mapbar{display:flex;gap:8px;margin:10px 0 6px;flex-wrap:wrap}
+.maphint{font-size:12px;color:var(--ink-2);margin:4px 0 12px;line-height:1.4}
+.pin{width:28px;height:28px;border-radius:50%;background:#1B2A41;color:#fff;font:700 13px/1 var(--sans);display:grid;place-items:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.pin.fixed{background:#B23A3A}
+.pin.done{background:#2F6B4F}
+.pin.current{box-shadow:0 0 0 4px #D8AE5A,0 1px 4px rgba(0,0,0,.35)}
+.pin.hotel{background:#B8892B;font-size:15px}
+.me{width:16px;height:16px;border-radius:50%;background:#2B7BE4;border:3px solid #fff;box-shadow:0 0 0 6px rgba(43,123,228,.25)}
+.leaflet-container{font-family:var(--sans)}
+.leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.4;color:#1B2A41}
+.leaflet-popup-content b{font-size:14px}
+.leaflet-popup-content a{color:#B23A3A;font-weight:600}
+@media (prefers-color-scheme: dark){
+  .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.5)}
+}
+ol.mlist{list-style:none;margin:0;padding:0}
+ol.mlist button{width:100%;display:flex;gap:10px;align-items:center;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px;cursor:pointer}
+ol.mlist .pin{flex:0 0 auto;width:26px;height:26px;font-size:12px}
+ol.mlist .mt{font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;color:var(--ink-2);flex:0 0 auto}
+ol.mlist .mtt{font-size:14px;font-weight:500;flex:1;min-width:0}
+.offline{display:none;text-align:center;font-size:12px;color:var(--ink-2);margin-top:20px}
+.offline.on{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>París <em>en familia</em></h1>
+    <small>30 oct – 2 nov · 4 adultos</small>
+  </div>
+  <div class="now" id="now"></div>
+</header>
+
+<nav class="days" id="tabs" role="tablist"></nav>
+
+<main id="main"></main>
+
+<div class="dock">
+  <a class="btn primary" id="toHotel" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+    Llévame al hotel
+  </a>
+  <button class="btn" id="goToday" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    Ir a hoy
+  </button>
+</div>
+
+<script src="vendor/leaflet.js"></script>
+<script>
+/* =====================================================================
+   DATOS DEL VIAJE — edita aquí. Cada parada:
+   t: hora "HH:MM" (+1 si es pasada la medianoche del mismo día)
+   fixed: true si es una reserva cerrada (sale en rojo)
+   todo: aviso de algo que hay que hacer antes
+   maps: texto que se busca en Google Maps para "Cómo llegar"
+   mode: transit | walking | driving
+   ===================================================================== */
+const HOTEL = {
+  name: "Hotel de Sévigné",
+  address: "6 rue de Belloy, 75116 París",
+  maps: "Hotel de Sévigné, 6 rue de Belloy, 75116 Paris",
+  metro: "Boissière (L6) · Argentine (L1)"
+};
+
+/* Coordenadas para el mapa, por el mismo texto que se usa en "maps".
+   Una parada puede llevar su propio ll:[lat,lng] si hace falta afinar. */
+const PLACES = {
+  [HOTEL.maps]: [48.8683, 2.2924],
+  "Aéroport de Paris-Beauvais": [49.4544, 2.1128],
+  "Paris Porte Maillot, 22 boulevard Pershing, 75017 Paris": [48.8790, 2.2833],
+  "Arc de Triomphe, Paris": [48.8738, 2.2950],
+  "Place de la Concorde, Paris": [48.8656, 2.3212],
+  "Pont Alexandre III, Paris": [48.8639, 2.3136],
+  "Rue Cler, 75007 Paris": [48.8567, 2.3062],
+  "Champ de Mars, Paris": [48.8556, 2.2986],
+  "Tour Eiffel, Paris": [48.8584, 2.2945],
+  "Bateaux Parisiens, Port de la Bourdonnais, Paris": [48.8596, 2.2924],
+  "Place du Trocadéro, Paris": [48.8620, 2.2880],
+  "Palais Royal - Musée du Louvre, Paris": [48.8625, 2.3364],
+  "Pyramide du Louvre, Paris": [48.8610, 2.3357],
+  "Musée du Louvre, Paris": [48.8600, 2.3375],
+  "Jardin du Palais Royal, Paris": [48.8650, 2.3378],
+  "Pont Neuf, Paris": [48.8572, 2.3412],
+  "Cathédrale Notre-Dame de Paris": [48.8530, 2.3499],
+  "Shakespeare and Company, Paris": [48.8526, 2.3471],
+  "Les Deux Magots, Paris": [48.8541, 2.3332],
+  "Anvers, Paris": [48.8829, 2.3441],
+  "Basilique du Sacré-Cœur de Montmartre, Paris": [48.8867, 2.3431],
+  "Place du Tertre, Paris": [48.8865, 2.3408],
+  "Place des Abbesses, Paris": [48.8844, 2.3386],
+  "Aéroport de Paris-Orly": [48.7262, 2.3652]
+};
+
+const DAYS = [
+  {
+    id: "2026-10-30", wd: "Vie", n: "30", title: "Viernes 30 · Llegada",
+    intro: "Día de viaje. Llegáis tarde a Beauvais, que está a más de una hora de París: lo importante es tener comprado el autobús y avisado el hotel.",
+    stops: [
+      { t:"17:30", title:"Al aeropuerto de Sevilla", note:"Dos horas antes del vuelo. Ryanair cierra el embarque 30 min antes y es estricta con el equipaje de mano.", maps:"Aeropuerto de Sevilla", mode:"driving" },
+      { t:"19:30", title:"Vuelo FR1246 · Sevilla → París Beauvais", note:"Llegada prevista a las 22:00.", fixed:true },
+      { t:"22:00", title:"Llegada a Beauvais (BVA)", note:"Salid directos a la parada del Aérobus, justo fuera de la terminal. Los autobuses salen coordinados con las llegadas de los vuelos.", fixed:true, maps:"Aéroport de Paris-Beauvais", mode:"walking" },
+      { t:"22:30", title:"Aérobus A01 → Porte Maillot", note:"Entre 1h15 y 1h30. Compradlo online antes de salir: en 2026 piden reserva. Unos 17 € por persona.", todo:"Comprar billetes", maps:"Paris Porte Maillot, 22 boulevard Pershing, 75017 Paris", mode:"driving" },
+      { t:"00:00", next:true, title:"Porte Maillot → hotel", note:"A esas horas y con maletas, taxi o VTC: unos 10 minutos. En metro sería la L1 hasta Argentine y luego 15 minutos andando.", maps:HOTEL.maps, mode:"driving" },
+      { t:"00:15", next:true, title:"Check-in en el Hotel de Sévigné", note:"Avisad al hotel de que llegáis pasada la medianoche.", todo:"Avisar al hotel", maps:HOTEL.maps, mode:"walking" }
+    ]
+  },
+  {
+    id: "2026-10-31", wd: "Sáb", n: "31", title: "Sábado 31 · Campos Elíseos y Torre Eiffel",
+    intro: "Todo a pie desde el hotel. Mañana de paseo por la orilla derecha, comida cerca de la Torre y subida a las 15:30. Anochece sobre las 17:20, así que la bajada coincide con las luces.",
+    stops: [
+      { t:"09:00", title:"Desayuno", note:"Con calma: la noche anterior habrá sido larga." },
+      { t:"10:00", title:"Arco del Triunfo", note:"A unos 10 minutos andando del hotel. Subir a la terraza es de pago; desde abajo ya merece la pena.", maps:"Arc de Triomphe, Paris", mode:"walking" },
+      { t:"10:30", title:"Campos Elíseos hasta la Concorde", note:"Unos 2 km cuesta abajo, paseando y con paradas.", maps:"Place de la Concorde, Paris", mode:"walking" },
+      { t:"11:45", title:"Puente Alejandro III e Inválidos", note:"El puente más fotogénico de París, con los Inválidos al fondo.", maps:"Pont Alexandre III, Paris", mode:"walking" },
+      { t:"13:00", title:"Comida en la rue Cler", note:"Calle peatonal de mercado con bistrós, a 10 minutos de la Torre.", maps:"Rue Cler, 75007 Paris", mode:"walking" },
+      { t:"14:30", title:"Campo de Marte", note:"Fotos de la Torre desde el césped antes de entrar.", maps:"Champ de Mars, Paris", mode:"walking" },
+      { t:"15:00", title:"Control de seguridad de la Torre", note:"Media hora antes de la reserva. Tened el QR en captura de pantalla.", maps:"Tour Eiffel, Paris", ll:[48.8574, 2.2960], mode:"walking" },
+      { t:"15:30", title:"Torre Eiffel · 2º piso por escaleras", note:"674 escalones hasta el segundo piso. Calculad entre 1h30 y 2h en total.", fixed:true, maps:"Tour Eiffel, Paris", mode:"walking" },
+      { t:"18:00", title:"Crucero por el Sena (opcional)", note:"Salen del pie de la Torre y duran alrededor de una hora. De noche, con los monumentos iluminados, es cuando más luce.", maps:"Bateaux Parisiens, Port de la Bourdonnais, Paris", mode:"walking" },
+      { t:"19:00", title:"Trocadéro · la Torre iluminada", note:"Al anochecer la Torre centellea unos minutos cada hora en punto.", maps:"Place du Trocadéro, Paris", mode:"walking" },
+      { t:"20:00", title:"Cena cerca del hotel", note:"Zona Trocadéro / Victor Hugo, a un paseo del hotel.", maps:HOTEL.maps, mode:"walking" }
+    ]
+  },
+  {
+    id: "2026-11-01", wd: "Dom", n: "1", title: "Domingo 1 · Louvre y la Île de la Cité",
+    intro: "Es Todos los Santos, festivo en Francia: habrá más gente y misas en Notre-Dame. La línea 1 os deja en la puerta del Louvre sin transbordo.",
+    stops: [
+      { t:"08:45", title:"Desayuno" },
+      { t:"09:20", title:"Metro L1 · Argentine → Palais Royal–Musée du Louvre", note:"Directo, unos 15 minutos.", maps:"Palais Royal - Musée du Louvre, Paris", mode:"transit" },
+      { t:"09:45", title:"Entrada por la Pirámide", note:"Fila de \"visiteurs avec billet\". El QR en captura: dentro la cobertura falla.", maps:"Pyramide du Louvre, Paris", mode:"walking" },
+      { t:"10:00", title:"Museo del Louvre", note:"Imprescindibles: Gioconda, Victoria de Samotracia, Venus de Milo, La Balsa de la Medusa, La Coronación de Napoleón. Unas 3 horas.", fixed:true, maps:"Musée du Louvre, Paris", mode:"walking" },
+      { t:"13:15", title:"Comida junto al Palais-Royal", note:"Y paseo por sus jardines y las columnas de Buren.", maps:"Jardin du Palais Royal, Paris", mode:"walking" },
+      { t:"14:30", title:"Pont des Arts y Pont Neuf", note:"Andando por el Sena hasta la Île de la Cité.", maps:"Pont Neuf, Paris", mode:"walking" },
+      { t:"15:15", title:"Catedral de Notre-Dame", note:"Entrada gratuita. La franja horaria se reserva en la web oficial 2–3 días antes: hacedlo el jueves o el viernes.", todo:"Reservar franja", maps:"Cathédrale Notre-Dame de Paris", mode:"walking" },
+      { t:"16:30", title:"Barrio Latino", note:"Shakespeare and Company, Saint-Michel, la Sorbona y el Panteón por fuera.", maps:"Shakespeare and Company, Paris", mode:"walking" },
+      { t:"18:00", title:"Saint-Germain-des-Prés", note:"Café en Les Deux Magots o el Café de Flore.", maps:"Les Deux Magots, Paris", mode:"walking" },
+      { t:"20:00", title:"Cena y vuelta al hotel", note:"Metro de vuelta: desde Châtelet, L1 directa hasta Argentine.", maps:HOTEL.maps, mode:"transit" }
+    ]
+  },
+  {
+    id: "2026-11-02", wd: "Lun", n: "2", title: "Lunes 2 · Montmartre y vuelta",
+    intro: "Mañana en Montmartre con las maletas en el hotel. A las 14:00 hay que salir hacia Orly sin falta.",
+    stops: [
+      { t:"08:30", title:"Desayuno y check-out", note:"Dejad las maletas en recepción.", maps:HOTEL.maps },
+      { t:"09:15", title:"Metro L2 · Charles de Gaulle–Étoile → Anvers", note:"10 minutos andando hasta Étoile y unos 20 de metro.", maps:"Anvers, Paris", mode:"transit" },
+      { t:"09:45", title:"Sacré-Cœur", note:"Abre de 6:30 a 22:30, entrada libre. Funicular o escaleras desde la plaza.", maps:"Basilique du Sacré-Cœur de Montmartre, Paris", mode:"walking" },
+      { t:"10:45", title:"Place du Tertre y rincones de Montmartre", note:"Pintores en la plaza, La Maison Rose, rue de l'Abreuvoir y el Muro de los Te quiero en Abbesses.", maps:"Place du Tertre, Paris", mode:"walking" },
+      { t:"12:00", title:"Comida en Montmartre", maps:"Place des Abbesses, Paris", mode:"walking" },
+      { t:"13:15", title:"Vuelta al hotel a por las maletas", note:"L2 de Anvers a Étoile.", maps:HOTEL.maps, mode:"transit" },
+      { t:"14:00", title:"Taxi a Orly", note:"Tarifa fija de 45 € desde la orilla derecha para los 4, unos 40–50 min. Alternativa en metro: L1 hasta Châtelet y L14 hasta Aéroport d'Orly.", maps:"Aéroport de Paris-Orly", mode:"driving" },
+      { t:"15:00", title:"Llegada a Orly (ORY)", note:"Dos horas antes del vuelo." },
+      { t:"17:05", title:"Vuelo VY8074 · París Orly → Sevilla", note:"Llegada a Sevilla a las 19:25.", fixed:true },
+      { t:"19:25", title:"Llegada a Sevilla", fixed:true }
+    ]
+  }
+];
+
+const BEFORE = [
+  { id:"b-aerobus", text:"Comprar el Aérobus Beauvais → Porte Maillot (4 billetes)", sub:"Sin reserva os podéis quedar sin plaza esa noche." },
+  { id:"b-hotel", text:"Avisar al hotel de la llegada pasada la medianoche" },
+  { id:"b-nd", text:"Reservar franja gratuita en Notre-Dame para el domingo", sub:"Se abre 2–3 días antes: jueves 29 o viernes 30." },
+  { id:"b-qr", text:"Capturas de los QR: Torre Eiffel, Louvre y tarjetas de embarque" },
+  { id:"b-dni", text:"DNI de los cuatro", sub:"Lo pueden pedir en el Louvre junto a la entrada." },
+  { id:"b-metro", text:"Billetes de metro en el móvil o en las máquinas de la estación" },
+  { id:"b-app", text:"Instalar esta app en los cuatro móviles y abrirla una vez con conexión" }
+];
+
+/* ===================================================================== */
+
+const TZ = "Europe/Paris";
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch{ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+};
+let done = store.get("paris.done", {});
+let sel = null;
+let view = store.get("paris.view", "lista");
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const mapsUrl = (q, mode) => "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(q) + "&travelmode=" + (mode || "transit");
+const mins = s => { const [h,m] = s.t.split(":").map(Number); return h*60 + m + (s.next ? 1440 : 0); };
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
+const PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+
+function nowParis(){
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"})
+    .formatToParts(new Date()).map(x => [x.type, x.value]));
+  return { date:`${p.year}-${p.month}-${p.day}`, min: Number(p.hour)*60 + Number(p.minute) };
+}
+// Devuelve el día del viaje "activo" y la hora dentro de él (la madrugada cuenta como el día anterior)
+function tripClock(){
+  const n = nowParis();
+  let d = DAYS.find(x => x.id === n.date), m = n.min;
+  if (n.min < 300){ // antes de las 5:00 → sigue siendo el día anterior
+    const i = DAYS.findIndex(x => x.id === n.date);
+    const prev = i > 0 ? DAYS[i-1] : DAYS.find(x => {
+      const dt = new Date(x.id + "T12:00:00Z"); dt.setUTCDate(dt.getUTCDate()+1);
+      return dt.toISOString().slice(0,10) === n.date;
+    });
+    if (prev){ d = prev; m = n.min + 1440; }
+  }
+  return { day:d, min:m, date:n.date };
+}
+
+function renderTabs(today){
+  const tabs = DAYS.map(d => `<button class="tab${today && today.id===d.id ? " today":""}" role="tab" data-id="${d.id}" aria-selected="${sel===d.id}"><b>${d.n}</b><span>${d.wd}</span></button>`).join("")
+    + `<button class="tab" role="tab" data-id="info" aria-selected="${sel==="info"}"><b>ⓘ</b><span>Info</span></button>`;
+  $("#tabs").innerHTML = tabs;
+  $("#tabs").querySelectorAll(".tab").forEach(b => b.onclick = () => { sel = b.dataset.id; store.set("paris.sel", sel); render(); window.scrollTo({top: $("#tabs").offsetTop, behavior:"smooth"}); });
+}
+
+function renderDay(d, clock){
+  const isToday = clock.day && clock.day.id === d.id;
+  let curIdx = -1;
+  if (isToday) d.stops.forEach((s,i) => { if (mins(s) <= clock.min) curIdx = i; });
+  const total = d.stops.length, nDone = d.stops.filter((s,i) => done[d.id+"#"+i]).length;
+
+  const items = d.stops.map((s,i) => {
+    const key = d.id + "#" + i;
+    const cls = ["stop", s.fixed?"fixed":"", done[key]?"done":"", i===curIdx?"current":""].join(" ");
+    const tags = [
+      s.fixed ? '<span class="tag fixed">Reservado</span>' : "",
+      s.todo ? `<span class="tag todo">${esc(s.todo)}</span>` : "",
+      i===curIdx ? '<span class="tag">Ahora</span>' : ""
+    ].join("");
+    const act = s.maps ? `<div class="actions"><a class="btn" target="_blank" rel="noopener" href="${mapsUrl(s.maps, s.mode)}">${PIN} Cómo llegar</a></div>` : "";
+    return `<li class="${cls}" id="s-${i}">
+      <div class="time">${s.t}</div><div class="dot"></div>
+      <div class="card">
+        <div class="top"><h3>${esc(s.title)}</h3>
+          <button class="chk" data-key="${key}" aria-label="Marcar como hecho">${CHECK}</button></div>
+        ${s.note ? `<p>${esc(s.note)}</p>` : ""}
+        ${tags.trim() ? `<div class="tags">${tags}</div>` : ""}
+        ${act}
+      </div></li>`;
+  }).join("");
+
+  const seg = `<div class="seg" role="group" aria-label="Vista">
+      <button type="button" data-view="lista" aria-pressed="${view!=="mapa"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>Lista</button>
+      <button type="button" data-view="mapa" aria-pressed="${view==="mapa"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Mapa</button>
+    </div>`;
+  const wireSeg = () => $("#main").querySelectorAll(".seg button").forEach(b => b.onclick = () => { view = b.dataset.view; store.set("paris.view", view); render(); });
+
+  if (view === "mapa"){
+    $("#main").innerHTML = `
+      <div class="dayhead"><h2>${esc(d.title)}</h2><p>${esc(d.intro)}</p></div>
+      ${seg}
+      <div id="map"></div>
+      <div class="mapbar">
+        <button class="btn" id="locate" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg> Dónde estoy</button>
+        <button class="btn" id="fitall" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg> Ver todo el día</button>
+      </div>
+      <p class="maphint">El mapa se guarda en el móvil a medida que lo veis. Abrid cada día una vez con conexión antes de salir para tenerlo también sin internet.</p>
+      <ol class="mlist" id="mlist"></ol>
+      <p class="offline" id="off">Sin conexión · el mapa muestra solo lo que ya habéis visto</p>`;
+    wireSeg();
+    renderMap(d, curIdx);
+    return curIdx;
+  }
+
+  $("#main").innerHTML = `
+    <div class="dayhead"><h2>${esc(d.title)}</h2><p>${esc(d.intro)}</p></div>
+    ${seg}
+    <div class="progress" aria-label="${nDone} de ${total} hechas"><i style="width:${total?nDone/total*100:0}%"></i></div>
+    <ol class="stops">${items}</ol>
+    <div class="notes"><label for="nt">Notas del día</label>
+      <textarea id="nt" placeholder="Restaurante que nos han recomendado, lo que queda pendiente…">${esc(store.get("paris.note."+d.id,""))}</textarea></div>
+    <p class="offline" id="off">Sin conexión · todo sigue funcionando</p>`;
+
+  wireSeg();
+  $("#main").querySelectorAll(".chk").forEach(b => b.onclick = () => { const k=b.dataset.key; done[k]=!done[k]; store.set("paris.done",done); render(); });
+  $("#nt").oninput = e => store.set("paris.note."+d.id, e.target.value);
+  return curIdx;
+}
+
+/* ---------- mapa del día ---------- */
+let map = null, meMarker = null;
+const pinIcon = (cls, txt) => L.divIcon({ className:"", html:`<div class="${cls}">${txt}</div>`, iconSize:[28,28], iconAnchor:[14,14], popupAnchor:[0,-14] });
+
+function renderMap(d, curIdx){
+  if (map){ map.remove(); map = null; meMarker = null; }
+  if (typeof L === "undefined"){ $("#map").innerHTML = '<p style="padding:16px">No se ha podido cargar el mapa.</p>'; return; }
+  map = L.map("map", { zoomControl:true, tap:true });
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+
+  const hotelLL = PLACES[HOTEL.maps];
+  const route = [], items = [];
+  let n = 0;
+  d.stops.forEach((s, i) => {
+    const ll = s.ll || (s.maps && PLACES[s.maps]);
+    if (!ll) return;
+    const last = route[route.length-1];
+    if (!last || last[0] !== ll[0] || last[1] !== ll[1]) route.push(ll);
+    if (s.maps === HOTEL.maps) return;          // el hotel tiene su propio marcador
+    n++;
+    const key = d.id + "#" + i;
+    const cls = ["pin", s.fixed?"fixed":"", done[key]?"done":"", i===curIdx?"current":""].join(" ").trim();
+    const m = L.marker(ll, { icon: pinIcon(cls, n), zIndexOffset: i===curIdx ? 1000 : 0 }).addTo(map)
+      .bindPopup(`<b>${s.t} · ${esc(s.title)}</b>${s.note ? `<br>${esc(s.note)}` : ""}<br><a target="_blank" rel="noopener" href="${mapsUrl(s.maps, s.mode)}">Cómo llegar →</a>`, { maxWidth: 260, autoPanPadding: [24, 24] });
+    items.push({ n, s, cls, m });
+  });
+
+  if (route.length > 1) L.polyline(route, { color:"#B8892B", weight:4, opacity:.9, dashArray:"2 9", lineCap:"round" }).addTo(map);
+  L.marker(hotelLL, { icon: pinIcon("pin hotel", "⌂") }).addTo(map)
+    .bindPopup(`<b>${esc(HOTEL.name)}</b><br>${esc(HOTEL.address)}<br><a target="_blank" rel="noopener" href="${mapsUrl(HOTEL.maps, "transit")}">Cómo llegar →</a>`);
+
+  const pts = items.map(x => x.m.getLatLng());
+  const bounds = L.latLngBounds(pts.length ? pts : [hotelLL]);
+  const fit = () => map.fitBounds(bounds, { padding:[28,28], maxZoom:16 });
+  fit();
+  setTimeout(() => { map.invalidateSize(); fit(); }, 60);
+
+  $("#mlist").innerHTML = items.map(x => `<li><button type="button" data-n="${x.n}"><span class="${x.cls}">${x.n}</span><span class="mt">${x.s.t}</span><span class="mtt">${esc(x.s.title)}</span></button></li>`).join("");
+  $("#mlist").querySelectorAll("button").forEach(b => b.onclick = () => {
+    const it = items.find(x => x.n === Number(b.dataset.n));
+    $("#map").scrollIntoView({ behavior:"smooth", block:"center" });
+    map.flyTo(it.m.getLatLng(), 16, { duration:.6 });
+    setTimeout(() => it.m.openPopup(), 650);
+  });
+  $("#fitall").onclick = () => { map.closePopup(); fit(); };
+  $("#locate").onclick = () => {
+    if (!navigator.geolocation) return alert("Este móvil no da la ubicación.");
+    navigator.geolocation.getCurrentPosition(p => {
+      const ll = [p.coords.latitude, p.coords.longitude];
+      if (meMarker) meMarker.setLatLng(ll);
+      else meMarker = L.marker(ll, { icon: L.divIcon({ className:"", html:'<div class="me"></div>', iconSize:[16,16], iconAnchor:[8,8] }), zIndexOffset:2000 }).addTo(map);
+      map.flyTo(ll, 16, { duration:.6 });
+    }, () => alert("No se ha podido obtener la ubicación. Revisa que la app tenga permiso."), { enableHighAccuracy:true, timeout:10000, maximumAge:30000 });
+  };
+}
+
+function renderInfo(){
+  const before = BEFORE.map(b => `<li class="${done[b.id]?"done":""}"><button class="chk" data-key="${b.id}" aria-label="Marcar">${CHECK}</button><span>${esc(b.text)}${b.sub?`<small>${esc(b.sub)}</small>`:""}</span></li>`).join("");
+  $("#main").innerHTML = `
+    <div class="dayhead"><h2>Información</h2><p>Lo que conviene tener a mano durante todo el viaje.</p></div>
+    <div class="section"><h3>Alojamiento</h3>
+      <dl class="kv"><dt>Hotel</dt><dd>${esc(HOTEL.name)}</dd><dt>Dirección</dt><dd>${esc(HOTEL.address)}</dd><dt>Metro</dt><dd>${esc(HOTEL.metro)}</dd></dl>
+      <div class="actions"><a class="btn primary" target="_blank" rel="noopener" href="${mapsUrl(HOTEL.maps,"transit")}">${PIN} Cómo llegar</a></div></div>
+    <div class="section"><h3>Vuelos</h3>
+      <dl class="kv"><dt>Ida · 30/10</dt><dd>Ryanair FR1246 · SVQ 19:30 → BVA 22:00</dd><dt>Vuelta · 2/11</dt><dd>Vueling VY8074 · ORY 17:05 → SVQ 19:25</dd></dl></div>
+    <div class="section"><h3>Reservas</h3>
+      <dl class="kv"><dt>Sáb 31 · 15:30</dt><dd>Torre Eiffel, 2º piso por escaleras</dd><dt>Dom 1 · 10:00</dt><dd>Museo del Louvre</dd></dl></div>
+    <div class="section"><h3>Antes de salir</h3><ul class="list">${before}</ul></div>
+    <div class="section"><h3>Transporte</h3>
+      <dl class="kv">
+        <dt>Beauvais</dt><dd>Aérobus A01 a Porte Maillot, 1h15–1h30</dd>
+        <dt>Orly</dt><dd>Taxi con tarifa fija: 45 € a la orilla derecha. Metro L14 directo desde Châtelet</dd>
+        <dt>Metro</dt><dd>L1 (Argentine) va directa al Louvre, Concorde y Châtelet. L6 (Boissière) a la Torre Eiffel (Bir-Hakeim)</dd>
+      </dl></div>
+    <div class="section"><h3>Emergencias</h3>
+      <dl class="kv"><dt>Emergencias</dt><dd><a href="tel:112">112</a></dd><dt>Médico (SAMU)</dt><dd><a href="tel:15">15</a></dd><dt>Policía</dt><dd><a href="tel:17">17</a></dd></dl></div>
+    <p class="offline" id="off">Sin conexión · todo sigue funcionando</p>`;
+  $("#main").querySelectorAll(".chk").forEach(b => b.onclick = () => { const k=b.dataset.key; done[k]=!done[k]; store.set("paris.done",done); render(); });
+}
+
+function renderNow(clock){
+  const box = $("#now");
+  const first = DAYS[0], start = new Date(first.id + "T00:00:00");
+  if (!clock.day){
+    const today = new Date(clock.date + "T00:00:00");
+    const diff = Math.round((start - today) / 864e5);
+    if (diff > 0){
+      const pend = BEFORE.filter(b => !done[b.id]).length;
+      box.innerHTML = `<div class="lbl">Faltan</div><div class="big">${diff} ${diff===1?"día":"días"} para París</div>
+        <div class="sub">${pend ? `${pend} cosas pendientes antes de salir · míralas en Info` : "Todo listo antes de salir"}</div>`;
+    } else {
+      box.innerHTML = `<div class="lbl">Viaje terminado</div><div class="big">Bienvenidos a casa</div>`;
+    }
+    return;
+  }
+  const d = clock.day;
+  let cur = null, nxt = null;
+  for (const s of d.stops){ if (mins(s) <= clock.min) cur = s; else { nxt = s; break; } }
+  const fmt = s => `${s.t} · ${esc(s.title)}`;
+  const left = nxt ? Math.max(0, mins(nxt) - clock.min) : 0;
+  const leftTxt = left >= 60 ? `en ${Math.floor(left/60)} h${left%60 ? ` ${left%60} min` : ""}` : `en ${left} min`;
+  box.innerHTML = `<div class="row">
+      <div><div class="lbl">Ahora</div><div class="big">${cur ? esc(cur.title) : "Aún no ha empezado el día"}</div>${cur?`<div class="sub">desde las ${cur.t}</div>`:""}</div>
+      <div class="sep"></div>
+      <div><div class="lbl">Siguiente</div><div class="big">${nxt ? esc(nxt.title) : "Fin del día"}</div>${nxt?`<div class="sub">${nxt.t} · ${leftTxt}</div>`:""}</div>
+    </div>`;
+}
+
+function render(){
+  const clock = tripClock();
+  if (!sel) sel = clock.day ? clock.day.id : (store.get("paris.sel", null) || (new Date(clock.date) > new Date(DAYS[DAYS.length-1].id) ? DAYS[0].id : "info"));
+  renderTabs(clock.day);
+  renderNow(clock);
+  if (sel === "info"){ if (map){ map.remove(); map = null; } renderInfo(); }
+  else renderDay(DAYS.find(d => d.id === sel) || DAYS[0], clock);
+  $("#off") && $("#off").classList.toggle("on", !navigator.onLine);
+}
+
+$("#toHotel").href = mapsUrl(HOTEL.maps, "transit");
+$("#goToday").onclick = () => {
+  const c = tripClock();
+  sel = c.day ? c.day.id : "info"; view = "lista"; store.set("paris.view", view); render();
+  const cur = document.querySelector(".stop.current");
+  (cur || $("#tabs")).scrollIntoView({behavior:"smooth", block:"center"});
+};
+addEventListener("online", render); addEventListener("offline", render);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+setInterval(() => renderNow(tripClock()), 30000);
+render();
+
+if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
