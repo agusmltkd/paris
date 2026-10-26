@@ -187,7 +187,7 @@ const BEFORE = [
   { id:"b-nd", text:"Reservar franja en Notre-Dame para el domingo", sub:"Se abre 2 o 3 días antes: jueves 29 o viernes 30." },
   { id:"b-qr", text:"Cargar las entradas en la app", sub:"En Viaje → Reservas: Torre Eiffel, Louvre y tarjetas de embarque. Funcionan sin conexión." },
   { id:"b-metro", text:"Billetes de metro en el móvil", sub:"App Bonjour RATP, o en las máquinas de cualquier estación." },
-  { id:"b-app", text:"Instalar esta app en los cuatro móviles", sub:"Y abrir el mapa de cada día una vez con conexión." }
+  { id:"b-app", text:"Instalar esta app en los cuatro móviles", sub:"Y abrirla una vez con conexión para que quede guardada." }
 ];
 
 const PACK = [

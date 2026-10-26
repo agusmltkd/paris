@@ -82,6 +82,31 @@ function nowNext(day, min){
   day.stops.forEach((s, i) => { if (mins(s) <= min) cur = i; });
   return { cur, next: cur + 1 < day.stops.length ? cur + 1 : -1 };
 }
+/* ---- tiempo de trayecto aproximado entre paradas ---- */
+const km = (a, b) => { const R = 6371, r = x => x * Math.PI / 180, dLa = r(b[0] - a[0]), dLo = r(b[1] - a[1]);
+  const h = Math.sin(dLa / 2) ** 2 + Math.cos(r(a[0])) * Math.cos(r(b[0])) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
+// Las calles no son rectas: se multiplica la distancia en línea recta por 1,3.
+function travel(from, to, mode){
+  if (!from || !to) return null;
+  const d = km(from, to) * 1.3;
+  if (d < 0.15 || d > 40) return null;
+  const walk = Math.round(d / 4.5 * 60);
+  if (mode === "driving") return { min: Math.round(6 + d / 22 * 60), how: "en taxi", kind: "taxi", d };
+  if (mode === "transit" || walk > 30) return { min: Math.round(10 + d / 20 * 60), how: "en metro", kind: "metro", d };
+  return { min: Math.max(2, walk), how: "a pie", kind: "walk", d };
+}
+// Trayecto hasta la parada i: desde la parada anterior con ubicación (o el hotel si es la primera del día).
+function legTo(day, i){
+  const s = day.stops[i], to = where(s); if (!to) return null;
+  let from = null;
+  for (let k = i - 1; k >= 0; k--){ const w = where(day.stops[k]); if (w){ from = w; break; } }
+  if (!from && day.scene !== "night") from = PLACES[HOTEL.maps];
+  return travel(from, to, s.mode);
+}
+const dist = d => d < 1 ? `${Math.round(d * 10) * 100} m` : `${d.toFixed(1).replace(".", ",")} km`;
+const hhmm = m => { m = ((m % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
+const legLine = l => l ? `<span class="leg">${icon(l.kind)}Unos ${l.min} min ${l.how} · ${dist(l.d)}</span>` : "";
+
 const inLabel = m => m >= 60 ? `dentro de ${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `dentro de ${m} min`;
 
 /* ===================== tiempo (Open-Meteo, sin clave) ===================== */
@@ -251,6 +276,9 @@ function viewHoy(){
       ${n ? `<div class="now-next">
         <span class="lbl">Siguiente · ${inLabel(Math.max(0, mins(n) - c.min))}</span>
         <div class="now-row"><span class="kind">${icon(n.kind)}</span><div><b>${esc(n.title)}</b><small>a las ${n.t}${n.note ? ` · ${rich(n.note)}` : ""}</small></div></div>
+        ${(() => { const l = legTo(d, next); if (!l) return ""; const leave = mins(n) - l.min - 5;
+          return `<div class="trip" id="trip">${legLine(l)}<span class="leave">Para llegar a las ${n.t}, salid sobre las <b>${hhmm(leave)}</b></span>
+            <button class="btn ghost sm" id="fromhere" data-next="${next}">${icon("locate")}Calcular desde donde estoy</button></div>`; })()}
         <div class="acts">${n.maps ? goBtn(n.maps, n.mode, "Cómo llegar", "primary") : ""}${n.booking ? viewBtn(n.booking) : ""}${s && s.booking && s.booking !== n.booking ? viewBtn(s.booking) : ""}</div>
       </div>` : `<div class="now-next"><span class="lbl">Siguiente</span><div class="now-row"><div><b>Fin del día</b><small>A descansar.</small></div></div></div>`}
     </section>
@@ -274,7 +302,7 @@ function viewPlan(){
       <div class="node"><span class="kind">${icon(s.kind)}</span></div>
       <article class="card">
         <header ${has ? `data-tog="${key}" role="button" tabindex="0" aria-expanded="${isOpen}"` : ""}>
-          <div class="ttl"><h3>${esc(s.title)}</h3>${s.note ? `<p>${rich(s.note)}</p>` : ""}
+          <div class="ttl">${legLine(legTo(d, i))}<h3>${esc(s.title)}</h3>${s.note ? `<p>${rich(s.note)}</p>` : ""}
             <div class="tags">${s.fixed ? `<span class="tag res">${icon("ticket")}Reservado</span>` : ""}${s.todo ? `<span class="tag todo">${esc(s.todo)}</span>` : ""}${i === cur ? `<span class="tag now">Ahora</span>` : ""}</div>
           </div>
           ${checkBtn(key)}
@@ -312,7 +340,7 @@ function viewMapa(){
       <div class="mapctl"><button class="fab" id="locate" aria-label="Dónde estoy">${icon("locate")}</button><button class="fab" id="fitall" aria-label="Ver todo">${icon("expand")}</button></div>
     </div>
     <ol class="mlist" id="mlist"></ol>
-    <p class="note">El mapa se guarda a medida que lo veis. Abridlo con conexión antes de salir y tendréis también sin internet las zonas que hayáis visto.</p>`;
+    <p class="note">El mapa necesita conexión. Sin internet, la lista de paradas, los "Cómo llegar" y todo lo demás siguen funcionando.</p>`;
 }
 function pinIcon(color, txt, extra = ""){
   return L.divIcon({ className:"", html:`<div class="pin ${extra}" style="--pc:${color}">${txt}</div>`, iconSize:[30, 30], iconAnchor:[15, 15], popupAnchor:[0, -15] });
@@ -471,6 +499,17 @@ function wire(){
   $$("[data-mapday]").forEach(b => b.onclick = () => { mapDay = b.dataset.mapday; store.set("paris.mapDay", mapDay); render(); });
   const note = $("#note"); if (note) note.oninput = e => store.set("paris.note." + sel, e.target.value);
   $$("[data-code]").forEach(i => i.oninput = () => store.set("paris.code." + i.dataset.code, i.value));
+  const fh = $("#fromhere");
+  if (fh) fh.onclick = () => {
+    const c = tripClock(), d = c.day, n = d && d.stops[Number(fh.dataset.next)], to = n && where(n);
+    if (!to || !navigator.geolocation) return;
+    fh.disabled = true; fh.lastChild.textContent = "Buscando ubicación…";
+    navigator.geolocation.getCurrentPosition(p => {
+      const l = travel([p.coords.latitude, p.coords.longitude], to, n.mode === "walking" ? "walking" : n.mode) || { min: 1, how: "a pie", kind: "walk", d: 0.1 };
+      const leave = mins(n) - l.min - 5, late = leave < c.min;
+      $("#trip").innerHTML = `${legLine(l)}<span class="leave">${late ? `Vais justos: si salís ya, llegáis sobre las <b>${hhmm(c.min + l.min)}</b>` : `Desde donde estás, salid sobre las <b>${hhmm(leave)}</b>`}</span>`;
+    }, () => { fh.disabled = false; fh.lastChild.textContent = "No se ha podido obtener la ubicación"; }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+  };
   $$("[data-viewtk]").forEach(b => b.onclick = e => { e.stopPropagation(); openTicket(b.dataset.viewtk); });
   $$("[data-pick]").forEach(b => b.onclick = () => pickFile(b.dataset.pick));
   $$("[data-unpick]").forEach(b => b.onclick = async () => {
