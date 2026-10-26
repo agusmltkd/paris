@@ -1,6 +1,12 @@
 # París en familia · 30 oct – 2 nov 2026
 
-PWA con el itinerario del viaje: lista y mapa por días, "ahora / siguiente", reservas, notas e info práctica. Funciona sin conexión una vez abierta.
+PWA del viaje familiar a París. Funciona sin conexión una vez abierta.
+
+- **Hoy**: qué toca ahora y lo siguiente, con el tiempo del día. Antes del viaje, cuenta atrás, lista de "Antes de salir" y previsión.
+- **Plan**: los cuatro días con su ilustración. Cada parada se abre para ver detalles y "Cómo llegar".
+- **Mapa**: el recorrido de cada día o de todo el viaje, con "Dónde estoy".
+- **Guía**: líneas de metro, frases útiles, dónde comer, consejos y emergencias.
+- **Viaje**: tarjetas de embarque, hotel, reservas con su código, lista de cosas por hacer y maleta.
 
 ## Instalar en el móvil
 
@@ -8,22 +14,21 @@ PWA con el itinerario del viaje: lista y mapa por días, "ahora / siguiente", re
 2. iPhone: Compartir → *Añadir a pantalla de inicio*. Android: menú → *Instalar app*.
 3. Abrir el **mapa de cada día** una vez con conexión, para que se guarde y se vea también sin internet.
 
-Las marcas de "hecho" y las notas se guardan en cada móvil; no se comparten.
+Las marcas de "hecho", las notas y los códigos de reserva se guardan en cada móvil; no se comparten.
 
 ## Cambiar el plan
 
-Todo está al principio de `index.html`:
-
-- `HOTEL`: datos del alojamiento.
-- `PLACES`: coordenadas para el mapa, por el mismo texto que el campo `maps` de cada parada.
-- `DAYS`: paradas de cada día (`t` hora, `title`, `note`, `fixed` si es reserva, `todo` si falta algo, `maps` para "Cómo llegar").
-- `BEFORE`: lista de "Antes de salir".
+Todo el contenido está en `data.js`: hotel, coordenadas, paradas de cada día, vuelos, reservas, listas, metro, frases, restaurantes y consejos. Las instrucciones de cada campo están al principio del archivo.
 
 Después de cambiar algo, sube el número de `CACHE` en `sw.js` para que los móviles cojan la versión nueva.
 
 ## Archivos
 
-- `index.html`: la app.
+- `index.html`: estructura y diseño.
+- `app.js`: la lógica de las pestañas, el mapa y el tiempo.
+- `data.js`: el contenido del viaje.
+- `scenes.js`: las ilustraciones de cada día, en SVG.
 - `sw.js`: service worker (caché de la app y de las teselas del mapa que se ven).
-- `manifest.webmanifest` e iconos.
-- `vendor/`: Leaflet 1.9.4 para el mapa. Mapa © colaboradores de OpenStreetMap.
+- `vendor/`: Leaflet 1.9.4 y las fuentes Barlow y Barlow Condensed (SIL Open Font License).
+
+Mapa © colaboradores de OpenStreetMap. Previsión del tiempo de Open-Meteo.
