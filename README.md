@@ -32,3 +32,11 @@ Después de cambiar algo, sube el número de `CACHE` en `sw.js` para que los mó
 - `vendor/`: Leaflet 1.9.4 y las fuentes Barlow y Barlow Condensed (SIL Open Font License).
 
 Mapa © colaboradores de OpenStreetMap. Previsión del tiempo de Open-Meteo.
+
+## Widget y avisos en el iPhone (Scriptable)
+
+`scriptable/paris-widget.js` es un script para la app Scriptable (gratis en la App Store):
+
+- Al abrirlo programa un aviso a la hora de cada parada que queda, y otro 15 minutos antes en lo reservado y en los desplazamientos (60 antes del vuelo).
+- Como widget muestra qué toca ahora y lo siguiente, con cuenta atrás. Hay tamaños para la pantalla de inicio y la de bloqueo.
+- Funciona sin conexión. Si cambia el plan, `node scriptable/build.js` lo regenera desde `data.js` y hay que volver a abrirlo para reprogramar los avisos.
